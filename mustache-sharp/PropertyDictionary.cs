@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Reflection;
 
@@ -40,8 +41,7 @@ namespace Mustache
             if (!_cache.TryGetValue(type, out typeCache))
             {
                 typeCache = new Dictionary<string, PropertyInfo>();
-                BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
-                foreach (PropertyInfo propertyInfo in type.GetProperties(flags))
+                foreach (PropertyInfo propertyInfo in type.GetRuntimeProperties())
                 {
                     if (!propertyInfo.IsSpecialName)
                     {
@@ -124,7 +124,7 @@ namespace Mustache
                     object value = getValue(propertyInfo);
                     values.Add(value);
                 }
-                return values.AsReadOnly();
+                return new ReadOnlyCollection<object>(values);
             }
         }
 
