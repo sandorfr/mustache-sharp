@@ -20,7 +20,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;PORTABLE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -73,6 +73,9 @@
     <Compile Include="..\..\mustache-sharp\Generator.cs">
       <Link>Generator.cs</Link>
     </Compile>
+    <Compile Include="..\..\mustache-sharp\IArgument.cs">
+      <Link>IArgument.cs</Link>
+    </Compile>
     <Compile Include="..\..\mustache-sharp\IfTagDefinition.cs">
       <Link>IfTagDefinition.cs</Link>
     </Compile>
@@ -106,6 +109,12 @@
     <Compile Include="..\..\mustache-sharp\NewlineTagDefinition.cs">
       <Link>NewlineTagDefinition.cs</Link>
     </Compile>
+    <Compile Include="..\..\mustache-sharp\NumberArgument.cs">
+      <Link>NumberArgument.cs</Link>
+    </Compile>
+    <Compile Include="..\..\mustache-sharp\PlaceholderArgument.cs">
+      <Link>PlaceholderArgument.cs</Link>
+    </Compile>
     <Compile Include="..\..\mustache-sharp\PlaceholderFoundEventArgs.cs">
       <Link>PlaceholderFoundEventArgs.cs</Link>
     </Compile>
@@ -124,11 +133,26 @@
     <Compile Include="..\..\mustache-sharp\StaticGenerator.cs">
       <Link>StaticGenerator.cs</Link>
     </Compile>
+    <Compile Include="..\..\mustache-sharp\StringArgument.cs">
+      <Link>StringArgument.cs</Link>
+    </Compile>
     <Compile Include="..\..\mustache-sharp\TagDefinition.cs">
       <Link>TagDefinition.cs</Link>
     </Compile>
     <Compile Include="..\..\mustache-sharp\TagParameter.cs">
       <Link>TagParameter.cs</Link>
+    </Compile>
+    <Compile Include="..\..\mustache-sharp\UpcastDictionary.cs">
+      <Link>UpcastDictionary.cs</Link>
+    </Compile>
+    <Compile Include="..\..\mustache-sharp\ValueRequestEventArgs.cs">
+      <Link>ValueRequestEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\..\mustache-sharp\VariableArgument.cs">
+      <Link>VariableArgument.cs</Link>
+    </Compile>
+    <Compile Include="..\..\mustache-sharp\VariableFoundEventArgs.cs">
+      <Link>VariableFoundEventArgs.cs</Link>
     </Compile>
     <Compile Include="..\..\mustache-sharp\WithTagDefinition.cs">
       <Link>WithTagDefinition.cs</Link>

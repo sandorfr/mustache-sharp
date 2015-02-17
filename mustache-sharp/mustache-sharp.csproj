@@ -40,6 +40,13 @@
     <Compile Include="ContentTagDefinition.cs" />
     <Compile Include="Context.cs" />
     <Compile Include="ContextParameter.cs" />
+    <Compile Include="IArgument.cs" />
+    <Compile Include="NumberArgument.cs" />
+    <Compile Include="PlaceholderArgument.cs" />
+    <Compile Include="StringArgument.cs" />
+    <Compile Include="UpcastDictionary.cs" />
+    <Compile Include="VariableArgument.cs" />
+    <Compile Include="VariableFoundEventArgs.cs" />
     <Compile Include="SetTagDefinition.cs" />
     <Compile Include="NewlineTagDefinition.cs" />
     <Compile Include="IndexTagDefinition.cs" />
@@ -70,6 +77,7 @@
     <Compile Include="TagDefinition.cs" />
     <Compile Include="TagParameter.cs" />
     <Compile Include="Scope.cs" />
+    <Compile Include="ValueRequestEventArgs.cs" />
     <Compile Include="WithTagDefinition.cs" />
   </ItemGroup>
   <ItemGroup>
