@@ -350,6 +350,63 @@ Content";
         }
 
         /// <summary>
+        /// We can track all of the keys that appear in a template by
+        /// registering with the PlaceholderFound event.
+        /// </summary>
+        [TestMethod]
+        public void TestCompile_FindsVariables_RecordsVariables()
+        {
+            FormatCompiler compiler = new FormatCompiler();
+            HashSet<string> variables = new HashSet<string>();
+            compiler.VariableFound += (o, e) =>
+            {
+                variables.Add(e.Name);
+            };
+            compiler.Compile(@"{{@FirstName}}{{@LastName}}");
+            string[] expected = new string[] { "FirstName", "LastName" };
+            string[] actual = variables.OrderBy(s => s).ToArray();
+            CollectionAssert.AreEqual(expected, actual, "Not all variables were found.");
+        }
+
+        /// <summary>
+        /// We can track all of the keys that appear in a template by
+        /// registering with the PlaceholderFound event.
+        /// </summary>
+        [TestMethod]
+        public void TestCompile_FindsPlaceholdersInIf_RecordsPlaceholders()
+        {
+            FormatCompiler compiler = new FormatCompiler();
+            HashSet<string> keys = new HashSet<string>();
+            compiler.PlaceholderFound += (o, e) =>
+            {
+                keys.Add(e.Key);
+            };
+            compiler.Compile(@"{{#if FirstName}}{{/if}}");
+            string[] expected = new string[] { "FirstName" };
+            string[] actual = keys.OrderBy(s => s).ToArray();
+            CollectionAssert.AreEqual(expected, actual, "Not all placeholders were found.");
+        }
+
+        /// <summary>
+        /// We can track all of the keys that appear in a template by
+        /// registering with the PlaceholderFound event.
+        /// </summary>
+        [TestMethod]
+        public void TestCompile_FindsVariablesInIf_RecordsVariables()
+        {
+            FormatCompiler compiler = new FormatCompiler();
+            HashSet<string> variables = new HashSet<string>();
+            compiler.VariableFound += (o, e) =>
+            {
+                variables.Add(e.Name);
+            };
+            compiler.Compile(@"{{#if @FirstName}}{{/if}}");
+            string[] expected = new string[] { "FirstName" };
+            string[] actual = variables.OrderBy(s => s).ToArray();
+            CollectionAssert.AreEqual(expected, actual, "Not all placeholders were found.");
+        }
+
+        /// <summary>
         /// We can determine the context in which a placeholder is found by looking at the provided context array.
         /// </summary>
         [TestMethod]
@@ -393,6 +450,82 @@ Content";
             Assert.AreEqual(1, context.Length, "The context did not contain the right number of items.");
 
             Assert.AreEqual(String.Empty, context[0].TagName, "The top-most context had the wrong tag type.");
+        }
+
+        /// <summary>
+        /// If a key refers to a public field, its value should be substituted in the output.
+        /// </summary>
+        [TestMethod]
+        public void TestGenerate_KeyRefersToPublicField_SubstitutesValue()
+        {
+            FormatCompiler compiler = new FormatCompiler();
+            const string format = @"Hello, {{Field}}!!!";
+            Generator generator = compiler.Compile(format);
+            ClassWithPublicField instance = new ClassWithPublicField() { Field = "Bob" };
+            string result = generator.Render(instance);
+            Assert.AreEqual("Hello, Bob!!!", result, "The wrong text was generated.");
+        }
+
+        public class ClassWithPublicField
+        {
+            public string Field;
+        }
+
+        /// <summary>
+        /// If a derived class replaces a property/field in the base class (via new)
+        /// it should be used, instead of causing an exception or using the base's
+        /// property/field.
+        /// </summary>
+        [TestMethod]
+        public void TestGenerate_NewPropertyInDerivedClass_UsesDerivedProperty()
+        {
+            FormatCompiler compiler = new FormatCompiler();
+            const string format = @"Hello, {{Value}}!!!";
+            Generator generator = compiler.Compile(format);
+            DerivedClass instance = new DerivedClass() { Value = "Derived" };
+            string result = generator.Render(instance);
+            Assert.AreEqual("Hello, Derived!!!", result, "The wrong text was generated.");
+        }
+
+        public class BaseClass
+        {
+            public int Value { get; set; }
+        }
+
+        public class DerivedClass : BaseClass
+        {
+            public DerivedClass()
+            {
+                base.Value = 1;
+            }
+
+            public new string Value { get; set; }
+        }
+
+        /// <summary>
+        /// If a derived class replaces a property/field in the base class (via new)
+        /// it should be used, instead of causing an exception or using the base's
+        /// property/field.
+        /// </summary>
+        [TestMethod]
+        public void TestGenerate_NewPropertyInGenericDerivedClass_UsesDerivedProperty()
+        {
+            FormatCompiler compiler = new FormatCompiler();
+            const string format = @"Hello, {{Value}}!!!";
+            Generator generator = compiler.Compile(format);
+            DerivedClass<string> instance = new DerivedClass<string>() { Value = "Derived" };
+            string result = generator.Render(instance);
+            Assert.AreEqual("Hello, Derived!!!", result, "The wrong text was generated.");
+        }
+
+        public class DerivedClass<T> : BaseClass
+        {
+            public DerivedClass()
+            {
+                base.Value = 1;
+            }
+
+            public new T Value { get; set; }
         }
 
         #endregion
@@ -663,6 +796,110 @@ Middle";
         /// If the condition evaluates to false, the content of an if statement should not be printed.
         /// </summary>
         [TestMethod]
+        public void TestCompile_If_null_SkipsContent()
+        {
+            FormatCompiler parser = new FormatCompiler();
+            const string format = "Before{{#if this}}Content{{/if}}After";
+            Generator generator = parser.Compile(format);
+            string result = generator.Render(null);
+            Assert.AreEqual("BeforeAfter", result, "The wrong text was generated.");
+        }
+
+        /// <summary>
+        /// If the condition evaluates to false, the content of an if statement should not be printed.
+        /// </summary>
+        [TestMethod]
+        public void TestCompile_If_DBNull_SkipsContent()
+        {
+            FormatCompiler parser = new FormatCompiler();
+            const string format = "Before{{#if this}}Content{{/if}}After";
+            Generator generator = parser.Compile(format);
+            string result = generator.Render(DBNull.Value);
+            Assert.AreEqual("BeforeAfter", result, "The wrong text was generated.");
+        }
+
+        /// <summary>
+        /// If the condition evaluates to false, the content of an if statement should not be printed.
+        /// </summary>
+        [TestMethod]
+        public void TestCompile_If_EmptyIEnumerable_SkipsContent()
+        {
+            FormatCompiler parser = new FormatCompiler();
+            const string format = "Before{{#if this}}Content{{/if}}After";
+            Generator generator = parser.Compile(format);
+            string result = generator.Render(Enumerable.Empty<int>());
+            Assert.AreEqual("BeforeAfter", result, "The wrong text was generated.");
+        }
+
+        /// <summary>
+        /// If the condition evaluates to false, the content of an if statement should not be printed.
+        /// </summary>
+        [TestMethod]
+        public void TestCompile_If_NullChar_SkipsContent()
+        {
+            FormatCompiler parser = new FormatCompiler();
+            const string format = "Before{{#if this}}Content{{/if}}After";
+            Generator generator = parser.Compile(format);
+            string result = generator.Render('\0');
+            Assert.AreEqual("BeforeAfter", result, "The wrong text was generated.");
+        }
+
+        /// <summary>
+        /// If the condition evaluates to false, the content of an if statement should not be printed.
+        /// </summary>
+        [TestMethod]
+        public void TestCompile_If_ZeroInt_SkipsContent()
+        {
+            FormatCompiler parser = new FormatCompiler();
+            const string format = "Before{{#if this}}Content{{/if}}After";
+            Generator generator = parser.Compile(format);
+            string result = generator.Render(0);
+            Assert.AreEqual("BeforeAfter", result, "The wrong text was generated.");
+        }
+
+        /// <summary>
+        /// If the condition evaluates to false, the content of an if statement should not be printed.
+        /// </summary>
+        [TestMethod]
+        public void TestCompile_If_ZeroFloat_SkipsContent()
+        {
+            FormatCompiler parser = new FormatCompiler();
+            const string format = "Before{{#if this}}Content{{/if}}After";
+            Generator generator = parser.Compile(format);
+            string result = generator.Render(0f);
+            Assert.AreEqual("BeforeAfter", result, "The wrong text was generated.");
+        }
+
+        /// <summary>
+        /// If the condition evaluates to false, the content of an if statement should not be printed.
+        /// </summary>
+        [TestMethod]
+        public void TestCompile_If_ZeroDouble_SkipsContent()
+        {
+            FormatCompiler parser = new FormatCompiler();
+            const string format = "Before{{#if this}}Content{{/if}}After";
+            Generator generator = parser.Compile(format);
+            string result = generator.Render(0.0);
+            Assert.AreEqual("BeforeAfter", result, "The wrong text was generated.");
+        }
+
+        /// <summary>
+        /// If the condition evaluates to false, the content of an if statement should not be printed.
+        /// </summary>
+        [TestMethod]
+        public void TestCompile_If_ZeroDecimal_SkipsContent()
+        {
+            FormatCompiler parser = new FormatCompiler();
+            const string format = "Before{{#if this}}Content{{/if}}After";
+            Generator generator = parser.Compile(format);
+            string result = generator.Render(0m);
+            Assert.AreEqual("BeforeAfter", result, "The wrong text was generated.");
+        }
+
+        /// <summary>
+        /// If the condition evaluates to false, the content of an if statement should not be printed.
+        /// </summary>
+        [TestMethod]
         public void TestCompile_If_EvaluatesToTrue_PrintsContent()
         {
             FormatCompiler parser = new FormatCompiler();
@@ -787,7 +1024,7 @@ Content{{/if}}";
         /// If the a header follows a footer, it shouldn't generate a new line.
         /// </summary>
         [TestMethod]
-        public void TestCompile_IfNewLineContentNewLineEndIfIfNewLineContenNewLineEndIf_PrintsContent()
+        public void TestCompile_IfNewLineContentNewLineEndIfIfNewLineContentNewLineEndIf_PrintsContent()
         {
             FormatCompiler parser = new FormatCompiler();
             const string format = @"{{#if this}}
@@ -1183,6 +1420,138 @@ Your order total was: $7.50";
             string actual = generator.Render(new int[] { 1, 1, 1, 1, });
             string expected = "123";
             Assert.AreEqual(expected, actual, "The numbers were not valid.");
+        }
+
+        /// <summary>
+        /// I can set context variables to control the flow of the code generation.
+        /// </summary>
+        [TestMethod]
+        public void TestCompile_CanUseContextVariableToToggle()
+        {
+            FormatCompiler compiler = new FormatCompiler();
+            const string format = @"{{#set even}}{{#each this}}{{#if @even}}Even {{#else}}Odd {{/if}}{{#set even}}{{/each}}";
+            Generator generator = compiler.Compile(format);
+            generator.ValueRequested += (sender, e) =>
+            {
+                e.Value = !(bool)(e.Value ?? false);
+            };
+            string actual = generator.Render(new int[] { 1, 1, 1, 1 });
+            string expected = "Even Odd Even Odd ";
+            Assert.AreEqual(expected, actual, "The context variable was not toggled.");
+        }
+
+        /// <summary>
+        /// I can set context variables to control the flow of the code generation.
+        /// It should even support nested context variables... for some reason.
+        /// </summary>
+        [TestMethod]
+        public void TestCompile_CanUseNestedContextVariableToToggle()
+        {
+            FormatCompiler compiler = new FormatCompiler();
+            const string format = @"{{#set this.variables.even}}
+{{#each this}}
+{{#if @variables.even}}
+Even
+{{#else}}
+Odd
+{{/if}}
+{{#set variables.even}}
+{{/each}}";
+            Generator generator = compiler.Compile(format);
+            generator.ValueRequested += (sender, e) =>
+            {
+                e.Value = !(bool)(e.Value ?? false);
+            };
+            string actual = generator.Render(new int[] { 1, 1, 1, 1 });
+            string expected = "EvenOddEvenOdd";
+            Assert.AreEqual(expected, actual, "The context variable was not toggled.");
+        }
+
+        #endregion
+
+        #region New Line Management
+
+		/// <summary>
+		/// If the compiler is configured to ignore new lines,
+        /// they should not be removed from the output.
+		/// </summary>
+		[TestMethod]
+		public void TestCompile_PreserveNewLines() 
+        {
+		    FormatCompiler compiler = new FormatCompiler();
+		    compiler.RemoveNewLines = false;
+		    const string format = @"Hello
+    ";
+
+		    const string expected = @"Hello
+    ";
+		    Generator generator = compiler.Compile(format);
+		    string result = generator.Render(null);
+		    Assert.AreEqual(expected, result, "The wrong text was generated.");
+		}
+
+        #endregion
+
+        #region Strings
+
+        /// <summary>
+        /// We will use a string variable to determine whether or not to print out a line.
+        /// </summary>
+        [TestMethod]
+        public void TestCompile_StringArgument_PassedToTag()
+        {
+            FormatCompiler compiler = new FormatCompiler();
+            const string format = @"{{#if 'hello'}}Hello{{/if}}";
+            Generator generator = compiler.Compile(format);
+            string actual = generator.Render(null);
+            string expected = "Hello";
+            Assert.AreEqual(expected, actual, "The string was not passed to the formatter.");
+        }
+
+        /// <summary>
+        /// We will use a string variable to determine whether or not to print out a line.
+        /// </summary>
+        [TestMethod]
+        public void TestCompile_EmptyStringArgument_PassedToTag()
+        {
+            FormatCompiler compiler = new FormatCompiler();
+            const string format = @"{{#if ''}}Hello{{/if}}";
+            Generator generator = compiler.Compile(format);
+            string actual = generator.Render(null);
+            string expected = "";
+            Assert.AreEqual(expected, actual, "The string was not passed to the formatter.");
+        }
+
+        #endregion
+
+        #region Numbers
+
+        /// <summary>
+        /// We will use a number variable to determine whether or not to print out a line.
+        /// </summary>
+        [TestMethod]
+        public void TestCompile_NumberArgument_PassedToTag()
+        {
+            FormatCompiler compiler = new FormatCompiler();
+            const string format = @"{{#if 4}}Hello{{/if}}";
+            Generator generator = compiler.Compile(format);
+            string actual = generator.Render(null);
+            string expected = "Hello";
+            Assert.AreEqual(expected, actual, "The number was not passed to the formatter.");
+        }
+
+        /// <summary>
+        /// We will use a string variable to determine whether or not to print out a line.
+        /// </summary>
+        [TestMethod]
+        public void TestCompile_ZeroNumberArgument_PassedToTag()
+        {
+            FormatCompiler compiler = new FormatCompiler();
+            const string format = @"{{#if 00.0000}}Hello{{/if}}";
+            Generator generator = compiler.Compile(format);
+            string actual = generator.Render(null);
+            string expected = "";
+            Assert.AreEqual(expected, actual, "The number was not passed to the formatter.");
         }
 
         #endregion

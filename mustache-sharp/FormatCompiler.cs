@@ -41,12 +41,24 @@ namespace Mustache
             _tagLookup.Add(newlineDefinition.Name, newlineDefinition);
             SetTagDefinition setDefinition = new SetTagDefinition();
             _tagLookup.Add(setDefinition.Name, setDefinition);
+
+            RemoveNewLines = true;
         }
 
         /// <summary>
         /// Occurs when a placeholder is found in the template.
         /// </summary>
         public event EventHandler<PlaceholderFoundEventArgs> PlaceholderFound;
+
+        /// <summary>
+        /// Occurs when a variable is found in the template.
+        /// </summary>
+        public event EventHandler<VariableFoundEventArgs> VariableFound;
+
+        /// <summary>
+        /// Gets or sets whether newlines are removed from the template (default: true).
+        /// </summary>
+        public bool RemoveNewLines { get; set; }
 
         /// <summary>
         /// Registers the given tag definition with the parser.
@@ -82,7 +94,7 @@ namespace Mustache
             List<Context> context = new List<Context>() { new Context(_masterDefinition.Name, new ContextParameter[0]) };
             int formatIndex = buildCompoundGenerator(_masterDefinition, context, generator, format, 0);
             string trailing = format.Substring(formatIndex);
-            generator.AddGenerator(new StaticGenerator(trailing));
+            generator.AddGenerator(new StaticGenerator(trailing, RemoveNewLines));
             return new Generator(generator);
         }
 
@@ -153,9 +165,7 @@ namespace Mustache
             {
                 regexBuilder.Append(@"(\s+?");
                 regexBuilder.Append(@"(?<argument>(");
-                regexBuilder.Append(RegexHelper.CompoundKey);
-                regexBuilder.Append("|@");
-                regexBuilder.Append(RegexHelper.Key);
+                regexBuilder.Append(RegexHelper.Argument);
                 regexBuilder.Append(@")))");
                 if (!parameter.IsRequired)
                 {
@@ -195,17 +205,34 @@ namespace Mustache
 
                 if (match.Groups["key"].Success)
                 {
-                    generator.AddGenerator(new StaticGenerator(leading));
+                    generator.AddGenerator(new StaticGenerator(leading, RemoveNewLines));
                     formatIndex = match.Index + match.Length;
                     string key = match.Groups["key"].Value;
                     string alignment = match.Groups["alignment"].Value;
                     string formatting = match.Groups["format"].Value;
-                    PlaceholderFoundEventArgs args = new PlaceholderFoundEventArgs(key, alignment, formatting, context.ToArray());
-                    if (PlaceholderFound != null)
+                    if (key.StartsWith("@"))
                     {
-                        PlaceholderFound(this, args);
+                        VariableFoundEventArgs args = new VariableFoundEventArgs(key.Substring(1), alignment, formatting, context.ToArray());
+                        if (VariableFound != null)
+                        {
+                            VariableFound(this, args);
+                            key = "@" + args.Name;
+                            alignment = args.Alignment;
+                            formatting = args.Formatting;
+                        }
                     }
-                    KeyGenerator keyGenerator = new KeyGenerator(args.Key, args.Alignment, args.Formatting);
+                    else
+                    {
+                        PlaceholderFoundEventArgs args = new PlaceholderFoundEventArgs(key, alignment, formatting, context.ToArray());
+                        if (PlaceholderFound != null)
+                        {
+                            PlaceholderFound(this, args);
+                            key = args.Key;
+                            alignment = args.Alignment;
+                            formatting = args.Formatting;
+                        }
+                    }
+                    KeyGenerator keyGenerator = new KeyGenerator(key, alignment, formatting);
                     generator.AddGenerator(keyGenerator);
                 }
                 else if (match.Groups["open"].Success)
@@ -218,10 +245,12 @@ namespace Mustache
                         string message = String.Format(Resources.UnknownTag, tagName);
                         throw new FormatException(message);
                     }
+
+                    generator.AddGenerator(new StaticGenerator(leading, RemoveNewLines));
+                    ArgumentCollection arguments = getArguments(nextDefinition, match, context);
+
                     if (nextDefinition.HasContent)
                     {
-                        generator.AddGenerator(new StaticGenerator(leading));
-                        ArgumentCollection arguments = getArguments(nextDefinition, match);
                         CompoundGenerator compoundGenerator = new CompoundGenerator(nextDefinition, arguments);
                         IEnumerable<TagParameter> contextParameters = nextDefinition.GetChildContextParameters();
                         bool hasContext = contextParameters.Any();
@@ -239,15 +268,13 @@ namespace Mustache
                     }
                     else
                     {
-                        generator.AddGenerator(new StaticGenerator(leading));
-                        ArgumentCollection arguments = getArguments(nextDefinition, match);
                         InlineGenerator inlineGenerator = new InlineGenerator(nextDefinition, arguments);
                         generator.AddGenerator(inlineGenerator);
                     }
                 }
                 else if (match.Groups["close"].Success)
                 {
-                    generator.AddGenerator(new StaticGenerator(leading));
+                    generator.AddGenerator(new StaticGenerator(leading, RemoveNewLines));
                     string tagName = match.Groups["name"].Value;
                     TagDefinition nextDefinition = _tagLookup[tagName];
                     formatIndex = match.Index;
@@ -259,7 +286,7 @@ namespace Mustache
                 }
                 else if (match.Groups["comment"].Success)
                 {
-                    generator.AddGenerator(new StaticGenerator(leading));
+                    generator.AddGenerator(new StaticGenerator(leading, RemoveNewLines));
                     formatIndex = match.Index + match.Length;
                 }
                 else if (match.Groups["unknown"].Success)
@@ -272,9 +299,9 @@ namespace Mustache
             return formatIndex;
         }
 
-        private static ArgumentCollection getArguments(TagDefinition definition, Match match)
+        private ArgumentCollection getArguments(TagDefinition definition, Match match, List<Context> context)
         {
-            ArgumentCollection collection = new ArgumentCollection();
+            // make sure we don't have too many arguments
             List<Capture> captures = match.Groups["argument"].Captures.Cast<Capture>().ToList();
             List<TagParameter> parameters = definition.Parameters.ToList();
             if (captures.Count > parameters.Count)
@@ -282,25 +309,78 @@ namespace Mustache
                 string message = String.Format(Resources.WrongNumberOfArguments, definition.Name);
                 throw new FormatException(message);
             }
+
+            // provide default values for missing arguments
             if (captures.Count < parameters.Count)
             {
                 captures.AddRange(Enumerable.Repeat((Capture)null, parameters.Count - captures.Count));
             }
+
+            // pair up the parameters to the given arguments
+            // provide default for parameters with missing arguments
+            // throw an error if a missing argument is for a required parameter
+            Dictionary<TagParameter, string> arguments = new Dictionary<TagParameter, string>();
             foreach (var pair in parameters.Zip(captures, (p, c) => new { Capture = c, Parameter = p }))
             {
-                if (pair.Capture == null)
+                string value = null;
+                if (pair.Capture != null)
                 {
-                    if (pair.Parameter.IsRequired)
-                    {
-                        string message = String.Format(Resources.WrongNumberOfArguments, definition.Name);
-                        throw new FormatException(message);
-                    }
-                    collection.AddArgument(pair.Parameter, null);
+                    value = pair.Capture.Value;                    
                 }
-                else
+                else if (pair.Parameter.IsRequired)
                 {
-                    collection.AddArgument(pair.Parameter, pair.Capture.Value);
-                }                
+                    string message = String.Format(Resources.WrongNumberOfArguments, definition.Name);
+                    throw new FormatException(message);
+                }
+                arguments.Add(pair.Parameter, value);
+            }
+
+            // indicate that a key/variable has been encountered
+            // update the key/variable name
+            ArgumentCollection collection = new ArgumentCollection();
+            foreach (var pair in arguments)
+            {
+                string placeholder = pair.Value;
+                IArgument argument = null;
+                if (placeholder != null)
+                {
+                    if (placeholder.StartsWith("@"))
+                    {
+                        string variableName = placeholder.Substring(1);
+                        VariableFoundEventArgs args = new VariableFoundEventArgs(placeholder.Substring(1), String.Empty, String.Empty, context.ToArray());
+                        if (VariableFound != null)
+                        {
+                            VariableFound(this, args);
+                            variableName = args.Name;
+                        }
+                        argument = new VariableArgument(variableName);
+                    }
+                    else if (RegexHelper.IsString(placeholder))
+                    {
+                        string value = placeholder.Trim('\'');
+                        argument = new StringArgument(value);
+                    }
+                    else if (RegexHelper.IsNumber(placeholder))
+                    {
+                        decimal number;
+                        if (Decimal.TryParse(placeholder, out number))
+                        {
+                            argument = new NumberArgument(number);
+                        }
+                    }
+                    else
+                    {
+                        string placeholderName = placeholder;
+                        PlaceholderFoundEventArgs args = new PlaceholderFoundEventArgs(placeholder, String.Empty, String.Empty, context.ToArray());
+                        if (PlaceholderFound != null)
+                        {
+                            PlaceholderFound(this, args);
+                            placeholderName = args.Key;
+                        }
+                        argument = new PlaceholderArgument(placeholderName);
+                    }
+                }
+                collection.AddArgument(pair.Key, argument);
             }
             return collection;
         }
