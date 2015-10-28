@@ -1,26 +1,22 @@
 ﻿{
-	"version": "1.0.2-beta-4",
+	"version": "1.0.2-beta-8",
 	"dependencies": {
 	},
 	"authors": [ "Cyprien Autexier", "Travis Parks" ],
 	"description": "An extension of the mustache text template engine for .NET. This is a portable library version of Travis Parks mustache csharp port.",
 	"frameworks": {
-		//"aspnet50": {
-		//	"dependencies": {
-		//	}
-		//},
 		"dnxcore50": {
 			"dependencies": {
-				"System.Runtime": "4.0.20-beta-22816",
-				"System.Collections": "4.0.10-beta-22816",
-				"System.Text.RegularExpressions": "4.0.10-beta-22816",
-				"System.Linq": "4.0.0-beta-22816",
-				"System.Reflection": "4.0.10-beta-22816",
-				"System.IO": "4.0.10-beta-22816",
-				"System.Globalization": "4.0.10-beta-22816",
-				"System.Runtime.Extensions": "4.0.10-beta-22816",
-				"System.Threading":  "4.0.10-beta-22816",
-				"System.Reflection.Extensions" : "4.0.0-beta-22816"
+				"System.Runtime": "4.0.21-beta-23409",
+				"System.Collections": "4.0.11-beta-23409",
+				"System.Text.RegularExpressions": "4.0.11-beta-23409",
+				"System.Linq": "4.0.1-beta-23409",
+				"System.Reflection": "4.1.0-beta-23409",
+				"System.IO": "4.0.11-beta-23409",
+				"System.Globalization": "4.0.11-beta-23409",
+				"System.Runtime.Extensions": "4.0.11-beta-23409",
+				"System.Threading":  "4.0.11-beta-23409",
+				"System.Reflection.Extensions" : "4.0.1-beta-23409"
 			},
 			"compilationOptions": { "define": [ "PORTABLE" ] }
 		}
