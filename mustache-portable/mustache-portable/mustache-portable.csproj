@@ -136,8 +136,14 @@
     <Compile Include="..\..\mustache-sharp\StringArgument.cs">
       <Link>StringArgument.cs</Link>
     </Compile>
+    <Compile Include="..\..\mustache-sharp\Substitution.cs">
+      <Link>Substitution.cs</Link>
+    </Compile>
     <Compile Include="..\..\mustache-sharp\TagDefinition.cs">
       <Link>TagDefinition.cs</Link>
+    </Compile>
+    <Compile Include="..\..\mustache-sharp\TagFormattedEventArgs.cs">
+      <Link>TagFormattedEventArgs.cs</Link>
     </Compile>
     <Compile Include="..\..\mustache-sharp\TagParameter.cs">
       <Link>TagParameter.cs</Link>

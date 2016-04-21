@@ -1,24 +1,43 @@
 ﻿{
-	"version": "1.0.2-beta-8",
+	"version": "1.0.2-rc1-final",
 	"dependencies": {
 	},
 	"authors": [ "Cyprien Autexier", "Travis Parks" ],
 	"description": "An extension of the mustache text template engine for .NET. This is a portable library version of Travis Parks mustache csharp port.",
-	"frameworks": {
-		"dnxcore50": {
-			"dependencies": {
-				"System.Runtime": "4.0.21-beta-23409",
-				"System.Collections": "4.0.11-beta-23409",
-				"System.Text.RegularExpressions": "4.0.11-beta-23409",
-				"System.Linq": "4.0.1-beta-23409",
-				"System.Reflection": "4.1.0-beta-23409",
-				"System.IO": "4.0.11-beta-23409",
-				"System.Globalization": "4.0.11-beta-23409",
-				"System.Runtime.Extensions": "4.0.11-beta-23409",
-				"System.Threading":  "4.0.11-beta-23409",
-				"System.Reflection.Extensions" : "4.0.1-beta-23409"
-			},
-			"compilationOptions": { "define": [ "PORTABLE" ] }
-		}
-	}
+  "compilationOptions": { "define": [ "PORTABLE" ] },
+  "frameworks": {
+    "dnx451": {
+      "dependencies": {
+      }
+    },
+    "net451": { },
+    "dnxcore50": {
+      "dependencies": {
+        "System.Runtime": "4.0.21-beta-23516",
+        "System.Collections": "4.0.11-beta-23516",
+        "System.Text.RegularExpressions": "4.0.11-beta-23516",
+        "System.Linq": "4.0.1-beta-23516",
+        "System.Reflection": "4.1.0-beta-23516",
+        "System.IO": "4.0.11-beta-23516",
+        "System.Globalization": "4.0.11-beta-23516",
+        "System.Runtime.Extensions": "4.0.11-beta-23516",
+        "System.Threading": "4.0.11-beta-23516",
+        "System.Reflection.Extensions": "4.0.1-beta-23516"
+      }
+    },
+    "dotnet5.4": {
+      "dependencies": {
+        "System.Runtime": "4.0.21-beta-23516",
+        "System.Collections": "4.0.11-beta-23516",
+        "System.Text.RegularExpressions": "4.0.11-beta-23516",
+        "System.Linq": "4.0.1-beta-23516",
+        "System.Reflection": "4.1.0-beta-23516",
+        "System.IO": "4.0.11-beta-23516",
+        "System.Globalization": "4.0.11-beta-23516",
+        "System.Runtime.Extensions": "4.0.11-beta-23516",
+        "System.Threading": "4.0.11-beta-23516",
+        "System.Reflection.Extensions": "4.0.1-beta-23516"
+      }
+    }
+  }
 }

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 
 namespace Mustache {
@@ -74,8 +73,7 @@ namespace Mustache {
                 return (Char)condition != '\0';
             }
             try {
-                //TODO : dirty very dirty
-                decimal number = decimal.Parse(string.Format(CultureInfo.InvariantCulture, "{0}", condition));
+                decimal number = (decimal)Convert.ChangeType(condition, typeof(decimal));
                 return number != 0.0m;
             }
             catch {

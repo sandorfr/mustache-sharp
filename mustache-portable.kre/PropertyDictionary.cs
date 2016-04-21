@@ -38,7 +38,6 @@ namespace Mustache {
                 typeCache = new Dictionary<string, Func<object, object>>();
 
 #if PORTABLE
-                //var typeInfo = type.GetTypeInfo();
                 var properties = getMembers(type, type.GetRuntimeProperties().Where(p => !p.IsSpecialName));
 #else
                 BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
