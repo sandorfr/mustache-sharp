@@ -60,7 +60,7 @@ namespace Mustache
                     }
                 }
 
-                 foreach (Type interfaceType in type.GetInterfaces())
+                foreach (Type interfaceType in type.GetInterfaces())
                 {
                     if (!visited.Contains(interfaceType))
                     {
@@ -210,7 +210,7 @@ namespace Mustache
             {
                 return false;
             }
-            KeyValuePair<string, TValue> pair = new KeyValuePair<string,TValue>(item.Key, (TValue)item.Value);
+            KeyValuePair<string, TValue> pair = new KeyValuePair<string, TValue>(item.Key, (TValue)item.Value);
             ICollection<KeyValuePair<string, TValue>> collection = dictionary;
             return dictionary.Contains(pair);
         }
