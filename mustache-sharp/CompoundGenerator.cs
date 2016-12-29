@@ -59,7 +59,7 @@ namespace Mustache
             }
         }
 
-        void IGenerator.GetText(Scope keyScope, TextWriter writer, Scope contextScope)
+        void IGenerator.GetText(TextWriter writer, Scope keyScope, Scope contextScope, Action<Substitution> postProcessor)
         {
             Dictionary<string, object> arguments = _arguments.GetArguments(keyScope, contextScope);
             IEnumerable<NestedContext> contexts = _definition.GetChildContext(writer, keyScope, arguments, contextScope);
@@ -80,11 +80,11 @@ namespace Mustache
             {
                 foreach (IGenerator generator in generators)
                 {
-                    generator.GetText(context.KeyScope ?? keyScope, context.Writer ?? writer, context.ContextScope);
-                    if (context.WriterNeedsConsidated)
-                    {
-                        writer.Write(_definition.ConsolidateWriter(context.Writer ?? writer, arguments));
-                    }
+                    generator.GetText(context.Writer ?? writer, context.KeyScope ?? keyScope, context.ContextScope, postProcessor);
+                }
+                if (context.WriterNeedsConsidated)
+                {
+                    writer.Write(_definition.ConsolidateWriter(context.Writer ?? writer, arguments));
                 }
             }
         }
